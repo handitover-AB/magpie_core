@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Magpie Model IDE</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js" integrity="sha512-8RnEqURPUc5aqFEN04aQEiPlSAdE0jlFS/9iGgUyNtwFnSKCXhmB6ZTNl7LnDtDWKabJIASzXrzD0K+LYexU9g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css" integrity="sha512-uf06llspW44/LZpHzHT6qBOIVODjWtv4MxCricRxkzvopAlSWnTf6hpZTFxuuZcuNE9CBQhqE0Seu1CoRk84nQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        body {
+            padding: 5px;
+        }
+
+        #model {
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .editor-container {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #editor, #editor .CodeMirror {
+            height: 100% !important;
+            min-height: 100%;
+        }
+        
+        .spinner {
+            width: 16px;
+            height: 16px;
+            position: absolute;
+            animation: 2s rotate linear infinite;
+            top: 10px;
+        }
+        
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner > svg {
+            position: relative;
+            top: -2px;
+        }
+
+        .spinner-container {
+            height: 16px;
+            width: 16px;
+            display: inline-block;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .toolbar {
+            margin-bottom: 5px;
+        }
+
+        .toolbar .btn {
+            position: relative;
+            top: -1px;
+        }
+
+        .custom-checkbox {
+            display: inline-block;
+        }
+
+        pre.errors {
+            color: darkred;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <h1>Magpie Model IDE</h1>
+
+        <div class="toolbar">
+            <!-- <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="auto_save" checked>
+                <label class="custom-control-label" for="auto_save">Auto save</label>
+            </div> -->
+            <div class="btn btn-light disabled" id="btn_save">
+                <div class="spinner-container hidden">
+                    <div class="spinner">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16">
+                            <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+                            <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+                        </svg>
+                    </div>
+                </div>
+                Save
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg editor-container">
+                <div id="editor"></div>
+                <div id="model_errors"></div>
+            </div>
+            <div class="col-lg">
+                <div id="graph"></div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<!-- Defer loading of javascript by placing these tags at the tail end of the document -->
+<script language="javascript" type="text/javascript"
+    src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"> </script>
+<script language="javascript" type="text/javascript" src="js/viz.js"></script>
+
+<script>
+    var updateGraphviz;
+    var updateModel;
+    var changeTimer;
+    var actor;
+    var editor;
+
+    var save = () => {
+        $(".spinner-container").removeClass("hidden");
+        $("#btn_save").addClass("disabled");
+
+        $.ajax({
+            url: `/api/model/${actor}`,
+            type: "PUT",
+            data: {"source": editor.getValue()}
+        })
+        .done((event) => {
+            updateModel();
+        })
+        .fail((event) => {
+            console.log("Failed to save");
+        })
+        .always(() => {
+            $("#btn_save").removeClass("btn-default").addClass("btn-light disabled");
+            $(".spinner-container").addClass("hidden");
+            $("#btn_save").removeClass("disabled");
+        });
+    }
+
+    var startTimer = () => {
+        changeTimer = setTimeout(() => {
+            clearTimeout(changeTimer);
+        }, 2000)
+    }
+    
+    var urlParams = new URLSearchParams(window.location.search);
+
+    $(document).ready(() => {
+        updateGraphviz = (dot) => {
+            $("#graph").html("");
+            var svg = Viz(dot, "svg");
+            $("#graph").html(svg);
+        }
+
+        updateModel = () => {
+            $.ajax({
+                url: `/api/model/${actor}`,
+                type: "GET"
+            })
+            .done((data) => {
+                editor.setValue(data.source);
+                updateGraphviz(data.dot);
+                $("#model_errors").html(`<pre class="errors">${data.errors.join("\n")}</pre>`);
+            });
+        }
+
+        $.ajaxSetup({
+            error: function (resp, e) {
+                if (resp.status == 0) {
+                    alert('You seem to be offline!\n Please check your network connection.');
+                } else if (resp.status == 404) {
+                    alert('URL not found.');
+                } else if (resp.status == 500) {
+                    alert('Internal server error:\n' + resp.responseText);
+                } else if (e == 'parsererror') {
+                    alert('Error.\nParsing error:\n' + resp.responseText);
+                } else if (e == 'timeout') {
+                    alert('Timeout error.');
+                } else {
+                    alert('Unknown error.\n' + resp.responseText);
+                }
+            }
+        });
+
+        $("#btn_save").click((e) => {
+            if (!$(e.target).hasClass("disabled")) {
+                save();
+            }
+        });
+
+        editor = CodeMirror(document.querySelector('#editor'), {
+            lineNumbers: true,
+            tabSize: 4,
+            value: ''
+        });
+
+        actor = urlParams.get("actor");
+        updateModel();
+    });    
+
+    $("#editor").keydown((event) => {
+        let code = (event.keyCode || event.which);
+        // Do nothing on arrow keys:
+        if (code == 37 || code == 38 || code == 39 || code == 40) {
+            return
+        }
+        // Do nothing on CTRL / OPTION / ALT / CMD keys:
+        if (code == 17 || code == 18 || code == 91) {
+            return
+        }
+ 
+        // CTRL+S should save
+        if (event.key === "s" && event.ctrlKey === true) {
+            let cursor_pos = editor.getCursor();
+            event.preventDefault();
+            save();
+            editor.setCursor(cursor_pos);
+        }
+
+        $("#btn_save").removeClass("btn-light disabled").addClass("btn-primary");
+
+        // if (!changeTimer) {
+        //     startTimer();
+        // } else {
+        //     clearTimeout(changeTimer);
+        //     startTimer();
+        // }
+    })
+
+</script>
+
+</html>

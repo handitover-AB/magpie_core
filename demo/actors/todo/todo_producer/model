@@ -1,0 +1,6 @@
+# Producer model
+
+Start                                                  Open start page      ->    At todo page
+At todo page    [Buy apples is not on list]            Add apples           ->    At todo page
+At todo page    [Get Sara at school is not on list]    Add get Sara         ->    At todo page
+At todo page    [Call workshop is not on list]         Add call workshop    ->    At todo page
