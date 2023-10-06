@@ -1,0 +1,10 @@
+# A cyclical model intended to run until the
+# assigned amount of time ends
+
+Start             open search page   ->   At start page
+
+At start page     reload page        ->   At start page
+At start page     do new search      ->   At search page
+
+At search page    reload page        ->   At search page 
+At search page    do new search      ->   At search page 

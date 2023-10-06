@@ -1,0 +1,6 @@
+# Consumer model
+
+Start                                              Open start page    ->    At todo page
+At todo page    [Buy apples is on list]            Buy apples         ->    At todo page
+At todo page    [Get Sara at school is on list]    Get Sara           ->    At todo page
+At todo page    [Call workshop is on list]         Call workshop      ->    At todo page
