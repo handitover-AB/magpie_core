@@ -47,5 +47,7 @@ COPY demo/                               /opt/magpie/demo/
 COPY main.py                             /opt/magpie
 COPY magpie_logo.txt                     /opt/magpie
 
+RUN mkdir -p /opt/magpie/tmp && chmod ugo+rw /opt/magpie/tmp
+
 RUN chmod +x                             /opt/magpie/entrypoint.sh
 ENTRYPOINT [ "/opt/magpie/entrypoint.sh" ]
