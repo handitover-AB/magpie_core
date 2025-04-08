@@ -29,7 +29,7 @@ from app.versions import get_version_string, GitNotFoundError
 
 load_dotenv()
 MAIN_FILE_LOCATION = str(Path(__file__).parent)
-PLAYWRIGHT_MIN_VERSION = "1.35.0"
+PLAYWRIGHT_MIN_VERSION = "1.51.0"
 
 SUMMARY_ASCII = r"""
  ____

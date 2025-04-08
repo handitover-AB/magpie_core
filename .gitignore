@@ -1,8 +1,11 @@
 */__pycache__/
-.pyenv
 output
 .DS_Store
 
 *.pyc
 *.pyi
 *.log
+
+.python-version
+.pyenv*
+.vscode
