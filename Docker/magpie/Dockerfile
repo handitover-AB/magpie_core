@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.33.0
+FROM mcr.microsoft.com/playwright:v1.51.0
 
 ARG MAGPIE_VER=UNKNOWN
 ARG MAGPIE_CORE_VER=UNKNOWN
@@ -23,7 +23,7 @@ RUN apt-get install tree
 # If we need the virtual python environment, it has
 # to be activated separately, on each RUN line, before it is used:
 RUN echo "Python version: $(python3 -V)"
-RUN apt-get install -y python3.10-venv
+RUN apt-get install -y python3.12-venv
 RUN python3 -m venv /opt/.pyenv
 RUN . /opt/.pyenv/bin/activate && pip install --upgrade pip
 RUN . /opt/.pyenv/bin/activate && pip install wheel

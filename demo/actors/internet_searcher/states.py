@@ -17,7 +17,7 @@ def at_start_page(page: Page):
 
 def at_search_page(page: Page):
     """The DuckDuckGo page contaning search results"""
-    url_pattern = re.compile(r"https://duckduckgo.com/\?q=Magpie.*")
+    url_pattern = re.compile(r"https://duckduckgo.com/\?.*q=Magpie.*")
     search_hit_pattern = re.compile(r".*Magpie - Wikipedia.*")
     expect(page).to_have_url(url_pattern)
     expect(page.locator("body")).to_have_text(search_hit_pattern)
